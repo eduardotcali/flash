@@ -1,111 +1,88 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Eduardo Skate Adventure</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flash Run</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #222; color: #fff; font-family: sans-serif; }
-    #startScreen { position: absolute; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-    #gameCanvas { display: none; background: #66ccff; }
-    button { font-size: 24px; padding: 10px 20px; margin-top: 20px; cursor: pointer; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: linear-gradient(#87ceeb, #f0f0f0);
+    }
+
+    #gameCanvas {
+      background: url('background.png') repeat-x;
+      background-size: cover;
+      display: block;
+      margin: auto;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px black;
+    }
   </style>
 </head>
 <body>
-  <div id="startScreen">
-    <h1>Eduardo Skate Adventure</h1>
-    <button onclick="startGame()">Start Game</button>
-    <audio id="startMusic" src="start-music.mp3" autoplay loop></audio>
-  </div>
+  <div id="score">Score: 0</div>
   <canvas id="gameCanvas" width="800" height="400"></canvas>
-
+  <audio id="bgMusic" autoplay loop>
+    <source src="bg-music.mp3" type="audio/mpeg" />
+  </audio>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const startScreen = document.getElementById('startScreen');
-    const music = document.getElementById('startMusic');
 
-    let player = { x: 50, y: 300, w: 40, h: 40, vy: 0, grounded: false };
-    let gravity = 1.5;
-    let keys = {};
+    const player = {
+      x: 50,
+      y: 300,
+      width: 48,
+      height: 48,
+      frame: 0,
+      sprite: new Image(),
+    };
+    player.sprite.src = 'player.png';
+
+    let backgroundX = 0;
     let score = 0;
-    let enemies = [];
 
-    function startGame() {
-      startScreen.style.display = 'none';
-      canvas.style.display = 'block';
-      music.pause();
-      spawnEnemy();
-      requestAnimationFrame(update);
-    }
-
-    window.addEventListener('keydown', e => keys[e.key] = true);
-    window.addEventListener('keyup', e => keys[e.key] = false);
-
-    function spawnEnemy() {
-      enemies.push({ x: 800, y: 320, w: 30, h: 30 });
-      setTimeout(spawnEnemy, 3000);
+    function drawPlayer() {
+      ctx.drawImage(player.sprite, player.frame * 48, 0, 48, 48, player.x, player.y, player.width, player.height);
     }
 
     function update() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      backgroundX -= 2;
+      if (backgroundX <= -800) backgroundX = 0;
+      canvas.style.backgroundPositionX = backgroundX + 'px';
 
-      // Background
-      ctx.fillStyle = '#99ddff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Ground
-      ctx.fillStyle = '#333';
-      ctx.fillRect(0, 360, canvas.width, 40);
-
-      // Move player
-      if (keys['ArrowRight']) player.x += 5;
-      if (keys['ArrowLeft']) player.x -= 5;
-
-      player.vy += gravity;
-      player.y += player.vy;
-      if (player.y >= 320) {
-        player.y = 320;
-        player.vy = 0;
-        player.grounded = true;
-      }
-
-      if (keys[' '] && player.grounded) {
-        player.vy = -20;
-        player.grounded = false;
-        document.getElementById('jumpSound').play();
-      }
-
-      ctx.fillStyle = 'lime';
-      ctx.fillRect(player.x, player.y, player.w, player.h);
-
-      // Enemies
-      ctx.fillStyle = 'red';
-      enemies.forEach(enemy => {
-        enemy.x -= 5;
-        ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
-
-        // Collision
-        if (player.x < enemy.x + enemy.w &&
-            player.x + player.w > enemy.x &&
-            player.y < enemy.y + enemy.h &&
-            player.y + player.h > enemy.y) {
-          score = 0;
-          document.getElementById('hitSound').play();
-        }
-      });
-
-      // Score
-      score++;
-      ctx.fillStyle = 'black';
-      ctx.font = '20px sans-serif';
-      ctx.fillText('Score: ' + score, 10, 30);
-
-      requestAnimationFrame(update);
+      player.frame = (player.frame + 1) % 4;
+      score += 1;
+      document.getElementById('score').textContent = 'Score: ' + Math.floor(score / 10);
     }
-  </script>
 
-  <audio id="jumpSound" src="jump.wav" preload="auto"></audio>
-  <audio id="hitSound" src="hit.wav" preload="auto"></audio>
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      update();
+      drawPlayer();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') {
+        player.x += 10;
+      }
+    });
+
+    player.sprite.onload = () => {
+      gameLoop();
+    };
+  </script>
 </body>
 </html>
